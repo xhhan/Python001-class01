@@ -8,33 +8,34 @@ import pandas as pd
 
 def get_movie_url():
     links = []
-    url = "https://movie.douban.com/top250?start=0"
+    url = "https://maoyan.com/films?showType=3"
     user_agent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
     header = {'user-agent': user_agent}
     response = requests.get(url, headers=header)
 
     bs_info = bs(response.text,'html.parser')
-    for tags in bs_info.find_all("div", attrs={"class": "hd"}):
-        for atag in tags.find_all("a", ):
-            links.append(atag.get("href"))
+    for tags in bs_info.find_all("div", attrs={"class": "movie-item film-channel"}):
+        links.append("https://maoyan.com"+str(tags.find('a',).get('href')))
     return links
 
 def get_movie_info(urls):
     user_agent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
     header = {'user-agent': user_agent}
     files_info = []
-    for url in urls:
+    for i in range(0, 10):
+        url = urls[i]
         types = ''
         file_date = ''
         file_info = []
         print("request "+url+" ,ing......")
         response = requests.get(url, headers=header)
         bs_info = bs(response.text, 'html.parser')
-        file_name = bs_info.find_all('span',attrs={'property':'v:itemreviewed'})[0].text
-        for type in bs_info.find_all('span',attrs={'property':'v:genre'}):
-            types = types+'/'+str(type.text)
-        for f_date in bs_info.find_all('span',attrs={'property':'v:initialReleaseDate'}):
-            file_date = file_date+'/'+str(f_date.text)
+        file_name = bs_info.find_all('h1',attrs={'class':'name'})[0].text
+        for info in bs_info.find_all('li',attrs={'class': 'ellipsis'}):
+            #print(info)
+            for atags in info.find_all('a',):
+                types = str(atags.text)+'/'+types
+            file_date = info.text
         file_info=[file_name, types, file_date]
         files_info.append(file_info)
         sleep(1)
@@ -48,13 +49,13 @@ def write_to_csv(data):
 
 
 if __name__ == '__main__':
-    #url1 = 'https://movie.douban.com/subject/3319755'
-    #url2 = 'https://movie.douban.com/subject/6786002'
+    #url1 = 'https://maoyan.com/films/1250952'
+    #url2 = 'https://maoyan.com/films/1218273'
     #urls = [url1, url2]
     #get_movie_info(urls)
     urls = get_movie_url()
     data = get_movie_info(urls)
-    print(data)
+    #print(urls)
     write_to_csv(data)
 
 
